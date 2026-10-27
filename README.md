@@ -20,9 +20,17 @@ alike; for an object-oriented interface to SQLite only, see
 
 **Status: prototype.** Linux first; Windows and macOS later.
 
-| Package | Release | Linux |
+| Package | Release | Linux (ooRexx 5.3.0 r13312) |
 |---|---|---|
-| Rexx/SQL | 2.6 beta 3 | in progress |
+| Rexx/SQL | 2.6 beta 3 | builds with SQLite 3; smoke test passes ([`rexxsql/`](rexxsql/)) |
+
+Building Rexx/SQL needs no change to its sources, only two settings
+(see [`rexxsql/build.sh`](rexxsql/build.sh)):
+
+```sh
+rexxsql/build.sh                       # downloads, configures, builds in build/rexxsql
+cd build && LD_LIBRARY_PATH=$PWD/rexxsql/src rexx ../rexxsql/test/smoke.rex
+```
 
 ## Licence
 
