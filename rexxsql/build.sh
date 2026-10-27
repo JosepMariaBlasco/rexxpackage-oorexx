@@ -14,8 +14,8 @@
 #                   (Linux: the multiarch directory; macOS: the SDK).
 #   macOS only:     where ooRexx and SQLite's headers are; -Wno-error
 #                   for the warnings that current clang reports as
-#                   errors by default; and two answers for configure's
-#                   own checks that current clang trips (see below).
+#                   errors by default; and three settings for what
+#                   configure gets wrong with current clang (see below).
 #
 # Requirements: ooRexx (headers and librexxapi), a C compiler, make,
 # unzip, curl; on Linux, the SQLite 3 development files (libsqlite3-dev).
@@ -36,6 +36,7 @@ SHA256=57e5b7082ce141820c0fd6c8a26e0c82da8b625f090ff454497d62fd1f8e59e8
 
 WORK=${1:-build/rexxsql}
 CFLAGS="-O2 -DOOREXX_40"
+LD_RXLIB1=
 set --
 
 case $(uname -s) in
@@ -64,6 +65,10 @@ case $(uname -s) in
     # and the build falls back to renaming objects, which fails here.
     # clang does accept -c with -o: give configure the answer.
     export ac_cv_prog_cc_gcc_c_o=yes ac_cv_prog_cc_cc_c_o=yes
+    # configure writes the shared library's link command with
+    # -install_name=NAME, which current clang rejects; the linker takes it
+    # as -Wl,-install_name,NAME. Same command otherwise.
+    LD_RXLIB1='$(CC) $(LDFLAGS) -dynamiclib -Wl,-install_name,$(@) -headerpad_max_install_names'
     ;;
   *)
     SQLITE_LIBDIR=${SQLITE_LIBDIR:-$(dirname "$(${CC:-gcc} -print-file-name=libsqlite3.so)")}
@@ -95,7 +100,11 @@ chmod +x configure install-sh common/config.guess common/config.sub
 
 echo "configure: CFLAGS=\"$CFLAGS\" --with-rexx=oorexx --with-db=sqlite3 $*"
 CFLAGS="$CFLAGS" ./configure --with-rexx=oorexx --with-db=sqlite3 "$@"
-make
+if [ -n "$LD_RXLIB1" ]; then
+  make LD_RXLIB1="$LD_RXLIB1"
+else
+  make
+fi
 
 echo "Built Rexx/SQL $VERSION for ooRexx in $WORK/src:"
 ls -l librexxsql.* rexxsql
