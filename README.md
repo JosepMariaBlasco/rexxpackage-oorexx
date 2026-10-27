@@ -18,17 +18,31 @@ others) through external functions, usable from classic Rexx and ooRexx
 alike; for an object-oriented interface to SQLite only, see
 [ooSQLite](https://github.com/JosepMariaBlasco/oosqlite).
 
-**Status: prototype.** Linux first; Windows and macOS later.
+**Status: prototype.**
 
-| Package | Release | Linux (ooRexx 5.3.0 r13312) |
-|---|---|---|
-| Rexx/SQL | 2.6 beta 3 | builds with SQLite 3; smoke test passes ([`rexxsql/`](rexxsql/)) |
+The ooRexx used everywhere is SourceForge's 5.3.0 beta build at the
+revision in [`oorexx-revision`](oorexx-revision) (today r13312).
 
-Building Rexx/SQL needs no change to its sources, only two settings
-(see [`rexxsql/build.sh`](rexxsql/build.sh)):
+| Package | Release | Linux x86_64 | macOS arm64, x86_64 | Windows x64 |
+|---|---|---|---|---|
+| Rexx/SQL | 2.6 beta 3 | ✓ | ✓ | ✓ |
+
+✓: builds with SQLite 3 and passes the smoke test, in the
+[CI](.github/workflows/rexxsql.yml), which keeps the binaries as artifacts.
+
+### Rexx/SQL
+
+No change to its sources; only settings (each explained in the scripts):
+
+- Linux and macOS: [`rexxsql/build.sh`](rexxsql/build.sh), the package's
+  `configure` with `--with-rexx=oorexx` and `-DOOREXX_40`; on macOS, also
+  a few settings for current clang and the SDK's SQLite.
+- Windows: [`rexxsql/build-windows.ps1`](rexxsql/build-windows.ps1), the
+  package's `vcwin64.mak` with `INT=OOREXX4`, pointed at ooRexx 5's
+  folders, and SQLite built from its official amalgamation.
 
 ```sh
-rexxsql/build.sh                       # downloads, configures, builds in build/rexxsql
+rexxsql/build.sh            # downloads, configures, builds in build/rexxsql
 cd build && LD_LIBRARY_PATH=$PWD/rexxsql/src rexx ../rexxsql/test/smoke.rex
 ```
 
