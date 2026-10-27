@@ -12,9 +12,10 @@
 #                   ship `oorexx-config`, so it is passed in CFLAGS.
 #   --with-dblibdir points `configure` at where libsqlite3 is today
 #                   (Linux: the multiarch directory; macOS: the SDK).
-#   macOS only:     where ooRexx and SQLite's headers are, and
-#                   -Wno-error for the warnings that current clang
-#                   reports as errors by default.
+#   macOS only:     where ooRexx and SQLite's headers are; -Wno-error
+#                   for the warnings that current clang reports as
+#                   errors by default; and two answers for configure's
+#                   own checks that current clang trips (see below).
 #
 # Requirements: ooRexx (headers and librexxapi), a C compiler, make,
 # unzip, curl; on Linux, the SQLite 3 development files (libsqlite3-dev).
@@ -58,6 +59,11 @@ case $(uname -s) in
     CFLAGS="$CFLAGS -Wno-error=implicit-int"
     CFLAGS="$CFLAGS -Wno-error=implicit-function-declaration"
     CFLAGS="$CFLAGS -Wno-error=int-conversion"
+    # configure's check for "-c and -o together" compiles `foo(){}`
+    # without CFLAGS; clang rejects the implicit int, so the check says no
+    # and the build falls back to renaming objects, which fails here.
+    # clang does accept -c with -o: give configure the answer.
+    export ac_cv_prog_cc_gcc_c_o=yes ac_cv_prog_cc_cc_c_o=yes
     ;;
   *)
     SQLITE_LIBDIR=${SQLITE_LIBDIR:-$(dirname "$(${CC:-gcc} -print-file-name=libsqlite3.so)")}
