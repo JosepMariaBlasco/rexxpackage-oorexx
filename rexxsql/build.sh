@@ -39,7 +39,10 @@ set --
 
 case $(uname -s) in
   Darwin)
-    : "${REXX_HOME:?REXX_HOME must name ooRexx's folder (bin, include, lib)}"
+    if [ -z "${REXX_HOME:-}" ]; then
+      echo "REXX_HOME must name the ooRexx folder (bin, include, lib)" >&2
+      exit 2
+    fi
     SDK=$(xcrun --show-sdk-path)
     set -- --with-dbincdir="$SDK/usr/include" --with-dblibdir="$SDK/usr/lib"
     CFLAGS="$CFLAGS -Wno-error=incompatible-function-pointer-types"
