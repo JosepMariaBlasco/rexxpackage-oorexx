@@ -1,0 +1,121 @@
+name: Rexx/SQL
+
+# Builds Rexx/SQL 2.6 beta 3 against ooRexx (the revision in the file
+# `oorexx-revision`) with SQLite 3 on Linux, macOS and Windows, runs the
+# smoke test, and keeps the binaries as artifacts.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  linux:
+    name: Linux (x86_64)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ooRexx
+        run: |
+          rev=$(tr -d ' \r\n' < oorexx-revision)
+          curl -fsSL -o /tmp/oorexx.deb \
+            "https://downloads.sourceforge.net/project/oorexx/oorexx/5.3.0beta/oorexx-5.3.0-$rev.ubuntu2404.x86_64.deb"
+          file /tmp/oorexx.deb | grep -q 'Debian binary package'
+          sudo dpkg -i /tmp/oorexx.deb
+          sudo ldconfig
+          rexx -v
+          echo "OOREXX_REV=$rev" >> "$GITHUB_ENV"
+
+      - name: Install SQLite 3 development files
+        run: sudo apt-get update && sudo apt-get install -y libsqlite3-dev
+
+      - name: Build
+        run: rexxsql/build.sh build/rexxsql
+
+      - name: Smoke test
+        working-directory: build
+        run: LD_LIBRARY_PATH="$PWD/rexxsql/src" rexx ../rexxsql/test/smoke.rex
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rexxsql-2.6B3-oorexx-r${{ env.OOREXX_REV }}-linux-x86_64
+          path: |
+            build/rexxsql/src/librexxsql.so
+            build/rexxsql/src/rexxsql
+            rexxsql/LICENSE
+
+  macos:
+    name: macOS (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            arch: arm64
+          - os: macos-15-intel
+            arch: x86_64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ooRexx (portable)
+        run: |
+          home=$(scripts/setup-oorexx-portable.sh macos.arm64.x86_64 "$RUNNER_TEMP/oorexx")
+          echo "REXX_HOME=$home" >> "$GITHUB_ENV"
+          echo "$home/bin" >> "$GITHUB_PATH"
+          echo "OOREXX_REV=$(tr -d ' \r\n' < oorexx-revision)" >> "$GITHUB_ENV"
+
+      - name: Build
+        run: rexxsql/build.sh build/rexxsql
+
+      - name: Smoke test
+        working-directory: build
+        run: |
+          rexx -v
+          DYLD_LIBRARY_PATH="$PWD/rexxsql/src:$REXX_HOME/lib" rexx ../rexxsql/test/smoke.rex
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rexxsql-2.6B3-oorexx-r${{ env.OOREXX_REV }}-macos-${{ matrix.arch }}
+          path: |
+            build/rexxsql/src/librexxsql.dylib
+            build/rexxsql/src/rexxsql
+            rexxsql/LICENSE
+
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ooRexx (portable)
+        shell: bash
+        run: |
+          home=$(scripts/setup-oorexx-portable.sh windows.x86_64 "$RUNNER_TEMP/oorexx")
+          echo "REXX_HOME=$(cygpath -w "$home")" >> "$GITHUB_ENV"
+          cygpath -w "$home/bin" >> "$GITHUB_PATH"
+          echo "OOREXX_REV=$(tr -d ' \r\n' < oorexx-revision)" >> "$GITHUB_ENV"
+
+      - uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build
+        shell: pwsh
+        run: rexxsql\build-windows.ps1 -RexxHome $env:REXX_HOME -Work build\rexxsql
+
+      - name: Smoke test
+        shell: pwsh
+        working-directory: build
+        run: |
+          rexx -v
+          $env:PATH = "$PWD\rexxsql\obj;$env:PATH"
+          rexx ..\rexxsql\test\smoke.rex
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rexxsql-2.6B3-oorexx-r${{ env.OOREXX_REV }}-windows-x64
+          path: |
+            build/rexxsql/obj/rexxsql.dll
+            build/rexxsql/obj/rexxsql.exe
+            rexxsql/LICENSE
