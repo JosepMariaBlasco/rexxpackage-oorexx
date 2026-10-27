@@ -67,7 +67,9 @@ jobs:
           echo "OOREXX_REV=$(tr -d ' \r\n' < oorexx-revision)" >> "$GITHUB_ENV"
 
       - name: Build
-        run: rexxsql/build.sh build/rexxsql
+        run: |
+          rexxsql/build.sh build/rexxsql
+          otool -L build/rexxsql/src/librexxsql.dylib
 
       - name: Smoke test
         working-directory: build

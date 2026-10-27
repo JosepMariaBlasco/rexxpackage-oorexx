@@ -43,8 +43,16 @@ case $(uname -s) in
       echo "REXX_HOME must name the ooRexx folder (bin, include, lib)" >&2
       exit 2
     fi
+    # The SDK has SQLite as a text stub, libsqlite3.tbd (the library itself
+    # is in the system's shared cache), and configure only accepts .so, .a,
+    # .sl, .lib or .dylib. So point it at a folder with the stub under both
+    # names: configure finds the .dylib; the linker prefers the .tbd. The
+    # result links to the system's /usr/lib/libsqlite3.dylib.
     SDK=$(xcrun --show-sdk-path)
-    set -- --with-dbincdir="$SDK/usr/include" --with-dblibdir="$SDK/usr/lib"
+    SQLITE_STUBS=$(mkdir -p "$WORK/sqlite-sdk" && cd "$WORK/sqlite-sdk" && pwd)
+    ln -sf "$SDK/usr/lib/libsqlite3.tbd" "$SQLITE_STUBS/libsqlite3.tbd"
+    ln -sf "$SDK/usr/lib/libsqlite3.tbd" "$SQLITE_STUBS/libsqlite3.dylib"
+    set -- --with-dbincdir="$SDK/usr/include" --with-dblibdir="$SQLITE_STUBS"
     CFLAGS="$CFLAGS -Wno-error=incompatible-function-pointer-types"
     CFLAGS="$CFLAGS -Wno-error=incompatible-pointer-types"
     CFLAGS="$CFLAGS -Wno-error=implicit-int"
