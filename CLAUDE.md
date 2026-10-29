@@ -27,7 +27,7 @@ here.
 ## ooRexx
 
 The ooRexx revision of the user's family of ooRexx projects, from
-SourceForge's own builds: today **r13324** (5.3.0 beta). It is also the
+SourceForge's own builds: today **r13329** (5.3.0 beta). It is also the
 minimum supported. Regina is built and tested too, so that nothing that
 works for Regina stops working.
 
