@@ -21,7 +21,7 @@ alike; for an object-oriented interface to SQLite only, see
 **Status: prototype.**
 
 The ooRexx used everywhere is SourceForge's 5.3.0 beta build at the
-revision in [`oorexx-revision`](oorexx-revision) (today r13358).
+revision in [`oorexx-revision`](oorexx-revision) (today r13379).
 
 | Package | Release | Linux x86_64 | macOS arm64, x86_64 | Windows x64 |
 |---|---|---|---|---|
